@@ -1,14 +1,5 @@
 import { Container } from 'pixi.js'
 
-// ==========================================
-// CAMERA
-// ==========================================
-/**
- * Камера
- * @param world - мир
- * @param canvas - канвас
- * @returns - камера
- */
 export class Camera {
     x = 0
     y = 0
@@ -28,7 +19,7 @@ export class Camera {
 
     constructor(
         private world: Container,
-        private canvas: HTMLCanvasElement,
+        private canvas: HTMLCanvasElement
     ) {
         this.boundMove = this.onMove.bind(this)
         this.boundUp = this.onUp.bind(this)
@@ -45,15 +36,12 @@ export class Camera {
 
     private onWheel = (e: WheelEvent) => {
         e.preventDefault()
-
         const mx = e.offsetX
         const my = e.offsetY
         const wx = (mx - this.x) / this.zoom
         const wy = (my - this.y) / this.zoom
-
         this.zoom *= e.deltaY < 0 ? 1.15 : 0.87
         this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom))
-
         this.x = mx - wx * this.zoom
         this.y = my - wy * this.zoom
         this.apply()

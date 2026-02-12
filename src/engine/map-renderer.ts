@@ -1,23 +1,15 @@
 import { Container, Graphics, Application } from 'pixi.js'
+import { TileType } from '@/game'
 import { Camera } from './camera'
-import { HALF_H, HALF_W } from '../constants'
-import { TileType } from '../types'
-import { createTile } from '../utils'
-
-// ==========================================
-// КООРДИНАТЫ
-// ==========================================
+import { HALF_H, HALF_W } from './constants'
+import { createTile } from './tile-factory'
 
 export function gridToIso(gx: number, gy: number) {
     return {
         x: (gx - gy) * HALF_W,
-        y: (gx + gy) * HALF_H,
+        y: (gx + gy) * HALF_H
     }
 }
-
-// ==========================================
-// ОПЦИИ
-// ==========================================
 
 export interface MapRendererOpts {
     map: TileType[][]
@@ -26,10 +18,6 @@ export interface MapRendererOpts {
     onHoverOut?: () => void
     onClick?: (type: TileType, gx: number, gy: number) => void
 }
-
-// ==========================================
-// RENDERER
-// ==========================================
 
 export class MapRenderer {
     readonly world: Container
@@ -45,25 +33,16 @@ export class MapRenderer {
         const H = opts.map.length
         const W = opts.map[0].length
 
-        // World container
         this.world = new Container()
         this.world.sortableChildren = true
         opts.app.stage.addChild(this.world)
 
-        // Camera
         this.camera = new Camera(this.world, opts.app.canvas)
 
-        // Render tiles
         this.renderTiles(W, H)
 
-        // Center camera
         const center = gridToIso(Math.floor(W / 2), Math.floor(H / 2))
-        this.camera.centerOn(
-            window.innerWidth,
-            window.innerHeight,
-            center.x,
-            center.y,
-        )
+        this.camera.centerOn(window.innerWidth, window.innerHeight, center.x, center.y)
     }
 
     private renderTiles(W: number, H: number) {
@@ -77,19 +56,17 @@ export class MapRenderer {
                 tile.y = iso.y
                 tile.zIndex = x + y
 
-                // Hit area
                 tile.eventMode = 'static'
                 tile.cursor = 'pointer'
                 tile.hitArea = {
                     contains: (px: number, py: number) =>
-                        Math.abs(px) / HALF_W + Math.abs(py) / HALF_H <= 1,
+                        Math.abs(px) / HALF_W + Math.abs(py) / HALF_H <= 1
                 }
 
                 tile.on('pointerover', () => this.showHighlight(x, y))
                 tile.on('pointerout', () => this.hideHighlight())
                 tile.on('pointertap', () => {
-                    if (!this.camera.wasDrag)
-                        this.opts.onClick?.(type, x, y)
+                    if (!this.camera.wasDrag) this.opts.onClick?.(type, x, y)
                 })
 
                 this.world.addChild(tile)
@@ -104,19 +81,17 @@ export class MapRenderer {
         this.hy = gy
 
         const iso = gridToIso(gx, gy)
-
         this.highlight = new Graphics()
         this.highlight.poly([
-            { x: 0,       y: -HALF_H },
-            { x: HALF_W,  y: 0 },
-            { x: 0,       y: HALF_H },
-            { x: -HALF_W, y: 0 },
+            { x: 0, y: -HALF_H },
+            { x: HALF_W, y: 0 },
+            { x: 0, y: HALF_H },
+            { x: -HALF_W, y: 0 }
         ])
         this.highlight.stroke({ color: 0xffffff, width: 2, alpha: 0.85 })
         this.highlight.x = iso.x
         this.highlight.y = iso.y
         this.highlight.zIndex = 99999
-
         this.world.addChild(this.highlight)
 
         const type = this.map[gy]?.[gx]

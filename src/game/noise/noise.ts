@@ -1,10 +1,3 @@
-// ==========================================
-// SEEDED RANDOM
-// ==========================================
-
-/**
- * Генератор случайных чисел
- */
 export class Rng {
     private s: number
 
@@ -18,34 +11,16 @@ export class Rng {
     }
 }
 
-// ==========================================
-// VALUE NOISE
-// ==========================================
-
-/**
- * Сглаживает число
- * @param t - число
- * @returns - сглаженное число
- */
 function smooth(t: number): number {
     return t * t * (3 - 2 * t)
 }
 
-/**
- * Генерирует 2D шум
- * @param w - ширина
- * @param h - высота
- * @param scale - масштаб
- * @param octaves - количество октав
- * @param seed - seed
- * @returns - массив    
- */
 export function noise2D(
     w: number,
     h: number,
     scale: number,
     octaves: number,
-    seed: number,
+    seed: number
 ): number[][] {
     const rng = new Rng(seed)
     const out: number[][] = Array.from({ length: h }, () => Array(w).fill(0))
@@ -55,7 +30,7 @@ export function noise2D(
         const amp = Math.pow(0.5, o)
         const gs = Math.ceil(Math.max(w, h) * freq) + 2
         const grid: number[][] = Array.from({ length: gs }, () =>
-            Array.from({ length: gs }, () => rng.next()),
+            Array.from({ length: gs }, () => rng.next())
         )
 
         for (let y = 0; y < h; y++) {
@@ -81,12 +56,6 @@ export function noise2D(
     return out
 }
 
-/**
- * Нормализует массив
- * @param a - массив
- * @param w - ширина
- * @param h - высота
- */
 export function normalize(a: number[][], w: number, h: number): void {
     let min = Infinity
     let max = -Infinity
@@ -100,6 +69,5 @@ export function normalize(a: number[][], w: number, h: number): void {
     const range = max - min || 1
 
     for (let y = 0; y < h; y++)
-        for (let x = 0; x < w; x++)
-            a[y][x] = (a[y][x] - min) / range
+        for (let x = 0; x < w; x++) a[y][x] = (a[y][x] - min) / range
 }

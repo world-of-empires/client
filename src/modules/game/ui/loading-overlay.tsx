@@ -1,27 +1,22 @@
-'use client'
-
-import dynamic from 'next/dynamic'
-
-const GameCanvas = dynamic(() => import('./game-canvas').then(m => m.GameCanvas), {
-    ssr: false,
-    loading: () => (
+export function LoadingOverlay() {
+    return (
         <div
             style={{
                 position: 'fixed',
                 inset: 0,
+                zIndex: 100,
                 background: '#070d1a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexDirection: 'column',
+                gap: '1rem',
                 color: '#fff',
                 fontSize: '1.4rem'
             }}
         >
-            🗺️ Загрузка...
+            <div style={{ fontSize: '3rem' }}>🗺️</div>
+            <div>Загрузка текстур и генерация мира...</div>
         </div>
     )
-})
-
-export function GameLoader() {
-    return <GameCanvas />
 }

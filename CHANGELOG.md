@@ -4,6 +4,36 @@
 
 ---
 
+## [0.2.1] — 12.02.2025
+
+**Рефакторинг** | Архитектура, Public API, kebab-case
+
+### Изменено
+
+#### Архитектура
+
+- **game/** — чистая игровая логика (без React, без Pixi):
+  - `types/game-types.ts`, `constants/map-constants.ts`, `noise/noise.ts`, `generator/map-generator.ts`
+  - `index.ts` — только re-export
+- **engine/** — игровой движок (Pixi, DOM, без React):
+  - `camera.ts`, `map-renderer.ts`, `texture-loader.ts`, `tile-factory.ts`, `constants.ts`
+  - `index.ts` — только re-export
+- **modules/** — React-компоненты и страницы:
+  - `home/ui/`, `game/ui/` — kebab-case: `home-page.tsx`, `game-canvas.tsx`, `game-hud.tsx` и др.
+  - `index.ts` — только re-export (Public API)
+
+#### Конвенции
+
+- Index-файлы выполняют только re-export (Public API)
+- Имена файлов в kebab-case (`game-canvas.tsx`, `loading-overlay.tsx` и т.п.)
+
+### Удалено
+
+- **shared/game** — заменён на `game/` + `engine/`
+- **shared/components** — заменён на `modules/home` + `modules/game`
+
+---
+
 ## [0.2.0] — 12.02.2025
 
 **Фаза 4–5** | Тайловая карта, процедурная генерация, камера, интерактивность
@@ -140,8 +170,10 @@
 
 | Версия | Дата       | Фазы                                    |
 |--------|------------|-----------------------------------------|
+| 0.2.1  | 12.02.2025 | Рефакторинг архитектуры                 |
 | 0.2.0  | 12.02.2025 | 4, 5                                    |
 | 0.1.0  | 12.02.2025 | 0, 1, 2, 3 (частично)                   |
 
+[0.2.1]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.1
 [0.2.0]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.0
 [0.1.0]: https://github.com/your-org/world-of-empires/releases/tag/v0.1.0

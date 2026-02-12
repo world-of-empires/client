@@ -1,5 +1,5 @@
-import { GameLoader } from '@/shared/components'
+import { GamePage } from '@/modules/game'
 
-export default function GamePage() {
-  return <GameLoader />
+export default function Game() {
+    return <GamePage />
 }
