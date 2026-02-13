@@ -1,6 +1,12 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# World of Empires (client)
 
-## Getting Started
+Клиентская часть игры. Next.js, React, Pixi.js, TypeScript.
+
+## Начало работы
+
+**Новый разработчик?** Открой **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** — там всё: архитектура, workflow, как фиксировать изменения.
+
+## Запуск
 
 First, run the development server:
 

@@ -4,6 +4,20 @@
 
 ---
 
+## [0.2.2] — 12.02.2025
+
+**Исправлено** | Водные зоны в map-generator
+
+### Изменено
+
+- **map-generator.ts** — рефакторинг и исправление водных зон:
+  - Разбиение на функции: `applyIslandFalloff`, `applyTemperatureGradient`, `assignBaseBiomes`, `applyWaterZones`, `enforceShallowBorder`, `applyTransitions`
+  - BFS по 8 направлениям для водных зон (dist 1=Shallow, 2–4=Sea, >4=Ocean)
+  - Валидация `enforceShallowBorder` — Shallow всегда между сушей и Sea/Ocean
+  - Импорт через `../noise` (Public API)
+
+---
+
 ## [0.2.1] — 12.02.2025
 
 **Рефакторинг** | Архитектура, Public API, kebab-case
@@ -170,10 +184,12 @@
 
 | Версия | Дата       | Фазы                                    |
 |--------|------------|-----------------------------------------|
+| 0.2.2  | 12.02.2025 | Исправление водных зон                  |
 | 0.2.1  | 12.02.2025 | Рефакторинг архитектуры                 |
 | 0.2.0  | 12.02.2025 | 4, 5                                    |
 | 0.1.0  | 12.02.2025 | 0, 1, 2, 3 (частично)                   |
 
+[0.2.2]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.2
 [0.2.1]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.1
 [0.2.0]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.0
 [0.1.0]: https://github.com/your-org/world-of-empires/releases/tag/v0.1.0
