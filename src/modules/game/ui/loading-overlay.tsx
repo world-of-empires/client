@@ -16,7 +16,7 @@ export function LoadingOverlay() {
             }}
         >
             <div style={{ fontSize: '3rem' }}>🗺️</div>
-            <div>Загрузка текстур и генерация мира...</div>
+            <div>Генерация мира...</div>
         </div>
     )
 }

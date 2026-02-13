@@ -1,8 +1,5 @@
 import { TileType } from '../types'
 
-export const DEFAULT_MAP_W = 64
-export const DEFAULT_MAP_H = 64
-
 export const TILE_NAMES: Record<TileType, string> = {
     [TileType.OCEAN]: 'ocean',
     [TileType.SEA]: 'sea',

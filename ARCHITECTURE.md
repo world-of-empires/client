@@ -47,6 +47,7 @@ src/
 │   │   ├── game-types.ts   # реализация
 │   │   └── index.ts        # только re-export
 │   ├── constants/
+│   │   ├── dimensions.ts
 │   │   ├── map-constants.ts
 │   │   └── index.ts
 │   ├── noise/
@@ -77,6 +78,7 @@ src/
         │   ├── game-loader.tsx
         │   ├── game-canvas.tsx
         │   ├── game-hud.tsx
+        │   ├── settings-panel.tsx
         │   ├── loading-overlay.tsx
         │   └── index.ts
         └── index.ts
@@ -166,7 +168,24 @@ import { GamePage } from '@/modules/game'
 
 ---
 
-## 7. Стиль кода (Prettier)
+## 7. Стилизация UI (Tailwind / inline)
+
+**Обязательное правило:** весь UI-функционал и стилизация должны использовать **только** один из двух подходов:
+
+1. **Tailwind CSS** — классы через `className` (предпочтительно)
+2. **Inline-стили** — объект `React.CSSProperties` через атрибут `style`
+
+**Запрещено:**
+- Отдельные CSS/SCSS файлы для компонентов (кроме `globals.css` для Tailwind)
+- CSS Modules (`.module.css`)
+- Styled-components, Emotion и подобные CSS-in-JS библиотеки
+- Глобальные селекторы в `globals.css` для компонентов (только Tailwind-директивы и CSS-переменные)
+
+**Рекомендация:** предпочитать Tailwind для типовых layout, spacing, typography; inline `style` — только для динамических значений (например, `width` в процентах, цвета из данных).
+
+---
+
+## 8. Стиль кода (Prettier)
 
 - Без точек с запятой (`semi: false`)
 - Одинарные кавычки (`singleQuote: true`)
@@ -177,7 +196,7 @@ import { GamePage } from '@/modules/game'
 
 ---
 
-## 8. Импорты
+## 9. Импорты
 
 Порядок импортов (Prettier):
 
@@ -189,7 +208,7 @@ import { GamePage } from '@/modules/game'
 
 ---
 
-## 9. React-компоненты
+## 10. React-компоненты
 
 - Именованный экспорт: `export function GameCanvas() { ... }`
 - `'use client'` — для компонентов с хуками, ref, event handlers
@@ -197,7 +216,7 @@ import { GamePage } from '@/modules/game'
 
 ---
 
-## 10. App Router
+## 11. App Router
 
 - Страницы — в `app/(root)/<route>/page.tsx`
 - Контент страницы — в модулях: `import { GamePage } from '@/modules/game'`
@@ -205,7 +224,7 @@ import { GamePage } from '@/modules/game'
 
 ---
 
-## 11. Добавление новой фичи
+## 12. Добавление новой фичи
 
 1. Создать `modules/<фича>/ui/<компонент>.tsx` (kebab-case)
 2. Создать `modules/<фича>/ui/index.ts` с re-export
@@ -216,6 +235,6 @@ import { GamePage } from '@/modules/game'
 
 ---
 
-*Документ актуален для версии 0.2.1*
+*Документ актуален для версии 0.3.0*
 
 **Как обновлять:** см. DEVELOPER_GUIDE.md

@@ -4,6 +4,41 @@
 
 ---
 
+## [0.3.0] — 12.02.2025
+
+**Новая функциональность** | Настройки карты, пресеты, расширенный MapConfig
+
+### Добавлено
+
+- **game/types/game-types.ts** — расширенный MapConfig:
+  - `LandMassType` (pangaea, continents, archipelago, lakes, fractal)
+  - `BiomeWeights` — доли биомов (snow, tundra, taiga, grass, plains, desert)
+  - `MAP_PRESETS` — 8 пресетов (default, pangaea, archipelago, desert_world, ice_age, lakes, tropical, tundra_world)
+  - `getDefaultConfig(width, height)` — конфиг по умолчанию
+  - `applyPreset(base, presetName)` — применение пресета
+- **game/constants/dimensions.ts** — `DEFAULT_MAP_W`, `DEFAULT_MAP_H` (разрыв циклической зависимости)
+- **modules/game/ui/settings-panel.tsx** — панель настройки карты:
+  - Пресеты, форма суши, доля воды, климат, доли биомов
+  - Статистика по биомам (%)
+- **GameHud** — кнопка «⚙️ Настройки», интеграция SettingsPanel
+
+### Изменено
+
+- **map-generator.ts** — рефакторинг под новый MapConfig:
+  - `applyLandShape` — поддержка LandMassType (PANGAEA, CONTINENTS, ARCHIPELAGO, LAKES, FRACTAL)
+  - `assignBiomes` — учёт biomeWeights
+  - `applyTemperature`, `applyMoisture` — temperatureBias, moistureBias
+- **game-canvas.tsx** — использование GameHud, config, stats, regenerate с apply
+- **game-hud.tsx** — упрощён, кнопка настроек, Legend, Hint
+- **map-constants.ts** — удалены dimensions (перенесены в dimensions.ts)
+- **constants/index.ts** — экспорт dimensions
+
+### Исправлено
+
+- Циклическая зависимость game-types → constants → map-constants → types
+
+---
+
 ## [0.2.2] — 12.02.2025
 
 **Исправлено** | Водные зоны в map-generator
@@ -184,11 +219,13 @@
 
 | Версия | Дата       | Фазы                                    |
 |--------|------------|-----------------------------------------|
+| 0.3.0  | 12.02.2025 | Настройки карты, пресеты, MapConfig     |
 | 0.2.2  | 12.02.2025 | Исправление водных зон                  |
 | 0.2.1  | 12.02.2025 | Рефакторинг архитектуры                 |
 | 0.2.0  | 12.02.2025 | 4, 5                                    |
 | 0.1.0  | 12.02.2025 | 0, 1, 2, 3 (частично)                   |
 
+[0.3.0]: https://github.com/your-org/world-of-empires/releases/tag/v0.3.0
 [0.2.2]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.2
 [0.2.1]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.1
 [0.2.0]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.0

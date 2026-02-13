@@ -1,49 +1,73 @@
-import { TileType, TILE_COLORS, TILE_NAMES } from '@/game'
+'use client'
 
-export function HoverInfo({ text }: { text: string }) {
+import { useState } from 'react'
+
+import { SettingsPanel } from './settings-panel'
+import { type MapConfig, TILE_COLORS, TILE_NAMES, TileType } from '@/game'
+
+interface GameHudProps {
+    seed: number
+    config: MapConfig
+    stats: Record<string, number>
+    hover: string | null
+    onRegen: () => void
+    onConfigChange: (config: MapConfig) => void
+    onApply: (config: MapConfig) => void
+}
+
+export function GameHud({ seed, config, stats, hover, onRegen, onConfigChange, onApply }: GameHudProps) {
+    const [showSettings, setShowSettings] = useState(false)
+
     return (
-        <div
-            style={{
-                position: 'fixed',
-                bottom: 64,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 10,
-                background: 'rgba(0,0,0,.8)',
-                color: '#fff',
-                padding: '5px 14px',
-                borderRadius: 6,
-                fontSize: '.85rem',
-                pointerEvents: 'none'
-            }}
-        >
+        <>
+            {/* Hover */}
+            {hover && <HoverInfo text={hover} />}
+
+            {/* Top bar */}
+            <div className='fixed top-3 left-3 z-20 flex items-center gap-2'>
+                <button onClick={onRegen} className={btnClass}>
+                    🔄 Новая
+                </button>
+
+                <button onClick={() => setShowSettings(s => !s)} className={btnClass}>
+                    ⚙️ Настройки
+                </button>
+
+                <span className='text-[11px] text-white/40'>seed: {seed}</span>
+            </div>
+
+            {/* Settings */}
+            {showSettings && (
+                <SettingsPanel
+                    config={config}
+                    stats={stats}
+                    onChange={onConfigChange}
+                    onApply={c => {
+                        onApply(c)
+                        setShowSettings(false)
+                    }}
+                    onClose={() => setShowSettings(false)}
+                />
+            )}
+
+            {/* Legend */}
+            <Legend />
+
+            {/* Hint */}
+            <Hint />
+        </>
+    )
+}
+
+function HoverInfo({ text }: { text: string }) {
+    return (
+        <div className='pointer-events-none fixed bottom-16 left-1/2 z-10 -translate-x-1/2 rounded-md bg-black/80 px-3 py-1.5 text-sm text-white'>
             {text}
         </div>
     )
 }
 
-export function Controls({ onRegen, seed }: { onRegen: () => void; seed: number }) {
-    return (
-        <div
-            style={{
-                position: 'fixed',
-                top: 14,
-                left: 14,
-                zIndex: 10,
-                display: 'flex',
-                gap: 8,
-                alignItems: 'center'
-            }}
-        >
-            <button onClick={onRegen} style={btnStyle}>
-                🔄 Новая карта
-            </button>
-            <span style={{ color: 'rgba(255,255,255,.4)', fontSize: '.75rem' }}>seed: {seed}</span>
-        </div>
-    )
-}
-
-export function Legend() {
+function Legend() {
     const tiles = [
         TileType.OCEAN,
         TileType.SEA,
@@ -57,67 +81,33 @@ export function Legend() {
     ]
 
     return (
-        <div
-            style={{
-                position: 'fixed',
-                top: 14,
-                right: 14,
-                zIndex: 10,
-                background: 'rgba(0,0,0,.75)',
-                padding: '10px 14px',
-                borderRadius: 8,
-                color: '#fff',
-                fontSize: '.8rem',
-                lineHeight: 2
-            }}
-        >
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>Биомы:</div>
+        <div className='fixed top-3 right-3 z-10 rounded-lg bg-black/75 px-3.5 py-2.5 text-[13px] leading-7 text-white'>
+            <div className='mb-1 font-bold'>Биомы:</div>
+
             {tiles.map(t => (
-                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div key={t} className='flex items-center gap-2'>
                     <span
-                        style={{
-                            display: 'inline-block',
-                            width: 14,
-                            height: 14,
-                            background: '#' + TILE_COLORS[t].toString(16).padStart(6, '0'),
-                            borderRadius: 2,
-                            flexShrink: 0
-                        }}
+                        className='inline-block h-3.5 w-3.5 rounded-[3px]'
+                        style={{ background: toHexColor(TILE_COLORS[t]) }}
                     />
-                    <span>{TILE_NAMES[t]}</span>
+                    <span className='text-white/90'>{TILE_NAMES[t]}</span>
                 </div>
             ))}
         </div>
     )
 }
 
-export function Hint() {
+function Hint() {
     return (
-        <div
-            style={{
-                position: 'fixed',
-                bottom: 14,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 10,
-                background: 'rgba(0,0,0,.7)',
-                color: 'rgba(255,255,255,.65)',
-                padding: '6px 18px',
-                borderRadius: 8,
-                fontSize: '.8rem'
-            }}
-        >
-            🖱️ Drag — перемещение &nbsp;|&nbsp; Scroll — зум
+        <div className='fixed bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-black/70 px-4 py-1.5 text-[13px] text-white/65'>
+            🖱️ Drag — перемещение | Scroll — зум | ⚙️ — настройки
         </div>
     )
 }
 
-const btnStyle: React.CSSProperties = {
-    padding: '8px 16px',
-    background: 'rgba(0,0,0,.75)',
-    color: '#fff',
-    border: '1px solid rgba(255,255,255,.2)',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: '.9rem'
+const btnClass =
+    'rounded-lg border border-white/20 bg-black/75 px-4 py-2 text-sm text-white hover:bg-black/85 active:scale-[0.99]'
+
+function toHexColor(color: number) {
+    return '#' + (color >>> 0).toString(16).padStart(6, '0')
 }

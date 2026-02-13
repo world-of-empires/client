@@ -1,3 +1,3 @@
-export { GamePage } from './game-page'
-export { GameLoader } from './game-loader'
-export { GameCanvas } from './game-canvas'
+export * from './game-page'
+export * from './game-loader'
+export * from './game-canvas'

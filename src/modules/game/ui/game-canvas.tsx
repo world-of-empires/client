@@ -2,27 +2,31 @@
 
 import { Application } from 'pixi.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DEFAULT_MAP_H, DEFAULT_MAP_W, generateMap, TILE_NAMES } from '@/game'
-import { getLoadedCount, loadAllTileTextures, MapRenderer } from '@/engine'
-import { Controls, Hint, HoverInfo, Legend } from './game-hud'
+
+import { GameHud } from './game-hud'
 import { LoadingOverlay } from './loading-overlay'
+import { MapRenderer, loadAllTileTextures } from '@/engine'
+import { DEFAULT_MAP_H, DEFAULT_MAP_W, type MapConfig, TILE_NAMES, generateMap, getDefaultConfig } from '@/game'
 
 export function GameCanvas() {
     const ref = useRef<HTMLDivElement>(null)
     const appRef = useRef<Application | null>(null)
     const rendRef = useRef<MapRenderer | null>(null)
     const initRef = useRef(false)
-    const bootIdRef = useRef(0)
 
     const [hover, setHover] = useState<string | null>(null)
-    const [seed, setSeed] = useState(0)
     const [status, setStatus] = useState<'loading' | 'ready'>('loading')
+    const [config, setConfig] = useState<MapConfig>(getDefaultConfig(DEFAULT_MAP_W, DEFAULT_MAP_H))
+    const [stats, setStats] = useState<Record<string, number>>({})
 
-    const boot = useCallback(async (forceSeed?: number) => {
+    // ==========================================
+    // BOOT
+    // ==========================================
+
+    const boot = useCallback(async (cfg: MapConfig) => {
         const el = ref.current
         if (!el) return
 
-        const bootId = ++bootIdRef.current
         setStatus('loading')
 
         rendRef.current?.destroy()
@@ -43,7 +47,7 @@ export function GameCanvas() {
             resizeTo: window
         })
 
-        if (!el.isConnected || bootId !== bootIdRef.current) {
+        if (!el.isConnected) {
             app.destroy(true, { children: true })
             return
         }
@@ -56,23 +60,24 @@ export function GameCanvas() {
         app.canvas.style.left = '0'
 
         await loadAllTileTextures()
-        if (bootId !== bootIdRef.current) return
-        console.log(`Textures ready: ${getLoadedCount()}/9`)
 
-        const s = forceSeed ?? Math.floor(Math.random() * 999999)
-        setSeed(s)
+        const map = generateMap(cfg)
 
-        const map = generateMap({
-            width: DEFAULT_MAP_W,
-            height: DEFAULT_MAP_H,
-            seed: s
-        })
+        // Статистика
+        const counts: Record<string, number> = {}
+        const total = cfg.width * cfg.height
+        for (const row of map)
+            for (const t of row) {
+                const name = TILE_NAMES[t]
+                counts[name] = (counts[name] || 0) + 1
+            }
+        for (const k of Object.keys(counts)) counts[k] = Math.round((counts[k] / total) * 100)
+        setStats(counts)
 
-        if (bootId !== bootIdRef.current || !app.stage) return
         rendRef.current = new MapRenderer({
             map,
             app,
-            onHover: (t, gx, gy) => setHover(`${TILE_NAMES[t]}  [${gx}, ${gy}]`),
+            onHover: (t, gx, gy) => setHover(`${TILE_NAMES[t]} [${gx}, ${gy}]`),
             onHoverOut: () => setHover(null),
             onClick: (t, gx, gy) => console.log(`Click: ${TILE_NAMES[t]} (${gx},${gy})`)
         })
@@ -83,8 +88,7 @@ export function GameCanvas() {
     useEffect(() => {
         if (initRef.current) return
         initRef.current = true
-        boot()
-
+        boot(config)
         return () => {
             rendRef.current?.destroy()
             rendRef.current = null
@@ -92,13 +96,25 @@ export function GameCanvas() {
             appRef.current = null
             initRef.current = false
         }
-    }, [boot])
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const regen = useCallback(() => {
-        initRef.current = false
-        boot(Math.floor(Math.random() * 999999))
-        initRef.current = true
-    }, [boot])
+    const regenerate = useCallback(
+        (newCfg?: MapConfig) => {
+            const cfg = newCfg ?? {
+                ...config,
+                seed: Math.floor(Math.random() * 999999)
+            }
+            setConfig(cfg)
+            initRef.current = false
+            boot(cfg)
+            initRef.current = true
+        },
+        [config, boot]
+    )
+
+    // ==========================================
+    // RENDER
+    // ==========================================
 
     return (
         <>
@@ -106,10 +122,7 @@ export function GameCanvas() {
                 ref={ref}
                 style={{
                     position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100vh',
+                    inset: 0,
                     overflow: 'hidden'
                 }}
             />
@@ -117,12 +130,15 @@ export function GameCanvas() {
             {status === 'loading' && <LoadingOverlay />}
 
             {status === 'ready' && (
-                <>
-                    {hover && <HoverInfo text={hover} />}
-                    <Controls onRegen={regen} seed={seed} />
-                    <Legend />
-                    <Hint />
-                </>
+                <GameHud
+                    seed={config.seed ?? 0}
+                    config={config}
+                    stats={stats}
+                    hover={hover}
+                    onRegen={() => regenerate()}
+                    onConfigChange={c => setConfig(c)}
+                    onApply={c => regenerate(c)}
+                />
             )}
         </>
     )

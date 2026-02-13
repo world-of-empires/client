@@ -1,97 +1,28 @@
-import { MapConfig, TileType } from "../types"
-import { noise2D, normalize } from '../noise'
+import { TileType, MapConfig, LandMassType } from '../types'
+import { Rng, noise2D, normalize } from '../noise'
+
+// ==========================================
+// ПУБЛИЧНЫЙ API
+// ==========================================
 
 export function generateMap(cfg: MapConfig): TileType[][] {
-    const {
-        width: W,
-        height: H,
-        seed = 42,
-        scale = 12,
-        oceanRatio = 0.35,
-        falloff = 0.55,
-    } = cfg
+    const W = cfg.width
+    const H = cfg.height
+    const seed = cfg.seed ?? 42
 
-    const elev = noise2D(W, H, scale, 5, seed)
-    const temp = noise2D(W, H, scale * 1.8, 3, seed + 1111)
-    const mois = noise2D(W, H, scale * 1.4, 3, seed + 2222)
+    const elev = noise2D(W, H, cfg.noiseScale, cfg.noiseOctaves, seed)
+    const temp = noise2D(W, H, cfg.noiseScale * 1.8, 3, seed + 1111)
+    const mois = noise2D(W, H, cfg.noiseScale * 1.4, 3, seed + 2222)
 
-    applyIslandFalloff(elev, W, H, falloff)
-    applyTemperatureGradient(temp, W, H)
+    applyLandShape(elev, W, H, cfg)
+    applyTemperature(temp, W, H, cfg.temperatureBias)
+    applyMoisture(mois, W, H, cfg.moistureBias)
 
-    const map = assignBaseBiomes(elev, temp, mois, W, H, oceanRatio)
+    const map = assignBiomes(elev, temp, mois, W, H, cfg)
 
-    // Водные зоны — НОВАЯ ВЕРСИЯ
     applyWaterZones(map, W, H)
-
-    // Переходы суши
     for (let i = 0; i < 3; i++) applyTransitions(map, W, H)
-
-    // ФИНАЛЬНАЯ ВАЛИДАЦИЯ — гарантия что Sea/Ocean не касаются суши
     enforceShallowBorder(map, W, H)
-
-    return map
-}
-
-// ==========================================
-// ISLAND FALLOFF
-// ==========================================
-
-function applyIslandFalloff(
-    elev: number[][], W: number, H: number, falloff: number,
-): void {
-    const cx = W / 2
-    const cy = H / 2
-
-    for (let y = 0; y < H; y++)
-        for (let x = 0; x < W; x++) {
-            const dx = (x - cx) / cx
-            const dy = (y - cy) / cy
-            elev[y][x] = Math.max(0, elev[y][x] - Math.sqrt(dx * dx + dy * dy) * falloff)
-        }
-
-    normalize(elev, W, H)
-}
-
-// ==========================================
-// TEMPERATURE
-// ==========================================
-
-function applyTemperatureGradient(
-    temp: number[][], W: number, H: number,
-): void {
-    for (let y = 0; y < H; y++)
-        for (let x = 0; x < W; x++)
-            temp[y][x] = (y / H) * 0.65 + temp[y][x] * 0.35
-}
-
-// ==========================================
-// BASE BIOMES
-// ==========================================
-
-function assignBaseBiomes(
-    elev: number[][], temp: number[][], mois: number[][],
-    W: number, H: number, oceanRatio: number,
-): TileType[][] {
-    const map: TileType[][] = Array.from({ length: H }, () =>
-        Array(W).fill(TileType.OCEAN),
-    )
-
-    for (let y = 0; y < H; y++) {
-        for (let x = 0; x < W; x++) {
-            if (elev[y][x] < oceanRatio) continue
-
-            const t = temp[y][x]
-            const m = mois[y][x]
-
-            if      (t < 0.12) map[y][x] = TileType.SNOW
-            else if (t < 0.22) map[y][x] = TileType.TUNDRA
-            else if (t < 0.32) map[y][x] = TileType.TAIGA
-            else if (t > 0.82) map[y][x] = TileType.DESERT
-            else if (t > 0.70) map[y][x] = m > 0.45 ? TileType.PLAINS : TileType.DESERT
-            else if (t > 0.60) map[y][x] = m > 0.35 ? TileType.GRASS : TileType.PLAINS
-            else               map[y][x] = TileType.GRASS
-        }
-    }
 
     return map
 }
@@ -100,27 +31,14 @@ function assignBaseBiomes(
 // УТИЛИТЫ
 // ==========================================
 
-// 8 направлений — включая диагонали
 const DIRS_8 = [
     [-1, -1], [0, -1], [1, -1],
     [-1,  0],          [1,  0],
     [-1,  1], [0,  1], [1,  1],
 ] as const
 
-// 4 направления
-const DIRS_4 = [
-    [-1, 0], [1, 0], [0, -1], [0, 1],
-] as const
-
 function isLand(t: TileType): boolean {
-    return (
-        t === TileType.GRASS  ||
-        t === TileType.PLAINS ||
-        t === TileType.DESERT ||
-        t === TileType.TAIGA  ||
-        t === TileType.TUNDRA ||
-        t === TileType.SNOW
-    )
+    return t >= TileType.GRASS && t <= TileType.SNOW
 }
 
 function isDeepWater(t: TileType): boolean {
@@ -128,26 +46,208 @@ function isDeepWater(t: TileType): boolean {
 }
 
 // ==========================================
-// ВОДНЫЕ ЗОНЫ — ИСПРАВЛЕННАЯ ВЕРСИЯ
+// ФОРМА СУШИ
 // ==========================================
-// 
-// Правило:
-//   1. BFS по 8 направлениям от суши
-//   2. dist = 1 → Shallow (прибрежная зона)
-//   3. dist = 2..4 → Sea
-//   4. dist > 4 → Ocean
-//   5. ВАЛИДАЦИЯ: любой Sea/Ocean рядом (8 dir) с сушей → Shallow
-//
-// Это гарантирует что между сушей и Sea/Ocean
-// ВСЕГДА есть минимум 1 тайл Shallow
+
+function applyLandShape(
+    elev: number[][],
+    W: number,
+    H: number,
+    cfg: MapConfig,
+): void {
+    const cx = W / 2
+    const cy = H / 2
+
+    switch (cfg.landMass) {
+        case LandMassType.PANGAEA: {
+            for (let y = 0; y < H; y++)
+                for (let x = 0; x < W; x++) {
+                    const dx = (x - cx) / cx
+                    const dy = (y - cy) / cy
+                    const dist = Math.sqrt(dx * dx + dy * dy)
+                    elev[y][x] = Math.max(0, elev[y][x] - Math.pow(dist, 1.5) * 0.8)
+                }
+            normalize(elev, W, H)
+            break
+        }
+
+        case LandMassType.CONTINENTS: {
+            const centers = generateCenters(cfg.islandCount || 2, W, H, cfg.seed ?? 42)
+            applyMultiCenterFalloff(elev, W, H, centers, 0.6)
+            break
+        }
+
+        case LandMassType.ARCHIPELAGO: {
+            const count = cfg.islandCount || 8
+            const centers = generateCenters(count, W, H, cfg.seed ?? 42)
+            applyMultiCenterFalloff(elev, W, H, centers, 0.3)
+
+            const extra = noise2D(W, H, cfg.noiseScale * 0.5, 3, (cfg.seed ?? 42) + 5555)
+            for (let y = 0; y < H; y++)
+                for (let x = 0; x < W; x++)
+                    elev[y][x] *= 0.6 + extra[y][x] * 0.4
+            normalize(elev, W, H)
+            break
+        }
+
+        case LandMassType.LAKES: {
+            for (let y = 0; y < H; y++)
+                for (let x = 0; x < W; x++) {
+                    const dx = (x - cx) / cx
+                    const dy = (y - cy) / cy
+                    elev[y][x] = Math.max(0, elev[y][x] - Math.sqrt(dx * dx + dy * dy) * 0.2)
+                }
+
+            const lakeNoise = noise2D(W, H, cfg.noiseScale * 0.7, 4, (cfg.seed ?? 42) + 7777)
+            for (let y = 0; y < H; y++)
+                for (let x = 0; x < W; x++) {
+                    if (lakeNoise[y][x] < 0.25)
+                        elev[y][x] *= lakeNoise[y][x] * 2
+                }
+            normalize(elev, W, H)
+            break
+        }
+
+        case LandMassType.FRACTAL:
+        default: {
+            for (let y = 0; y < H; y++)
+                for (let x = 0; x < W; x++) {
+                    const dx = (x - cx) / cx
+                    const dy = (y - cy) / cy
+                    elev[y][x] = Math.max(0, elev[y][x] - Math.sqrt(dx * dx + dy * dy) * 0.55)
+                }
+            normalize(elev, W, H)
+            break
+        }
+    }
+}
+
+function generateCenters(
+    count: number,
+    W: number,
+    H: number,
+    seed: number,
+): Array<{ x: number; y: number; radius: number }> {
+    const rng = new Rng(seed + 9999)
+    const margin = 0.15
+
+    return Array.from({ length: count }, () => ({
+        x: (margin + rng.next() * (1 - margin * 2)) * W,
+        y: (margin + rng.next() * (1 - margin * 2)) * H,
+        radius: (0.2 + rng.next() * 0.3) * Math.min(W, H),
+    }))
+}
+
+function applyMultiCenterFalloff(
+    elev: number[][],
+    W: number,
+    H: number,
+    centers: Array<{ x: number; y: number; radius: number }>,
+    edgeFalloff: number,
+): void {
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            let minDist = Infinity
+            for (const c of centers) {
+                const dx = (x - c.x) / c.radius
+                const dy = (y - c.y) / c.radius
+                minDist = Math.min(minDist, Math.sqrt(dx * dx + dy * dy))
+            }
+
+            const ex = Math.min(x, W - 1 - x) / (W * 0.15)
+            const ey = Math.min(y, H - 1 - y) / (H * 0.15)
+            const edgeDist = Math.min(1, Math.min(ex, ey))
+
+            const falloff = Math.pow(Math.min(minDist, 2) / 2, 1.5) * edgeFalloff
+            const edge = (1 - edgeDist) * 0.5
+
+            elev[y][x] = Math.max(0, elev[y][x] - falloff - edge)
+        }
+    }
+
+    normalize(elev, W, H)
+}
+
+// ==========================================
+// ТЕМПЕРАТУРА + ВЛАЖНОСТЬ
+// ==========================================
+
+function applyTemperature(temp: number[][], W: number, H: number, bias: number): void {
+    for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++) {
+            const latitude = y / H
+            let t = latitude * 0.65 + temp[y][x] * 0.35
+            t += bias * 0.3
+            temp[y][x] = Math.max(0, Math.min(1, t))
+        }
+}
+
+function applyMoisture(mois: number[][], W: number, H: number, bias: number): void {
+    for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++)
+            mois[y][x] = Math.max(0, Math.min(1, mois[y][x] + bias * 0.3))
+}
+
+// ==========================================
+// НАЗНАЧЕНИЕ БИОМОВ ПО ВЕСАМ
+// ==========================================
+
+function assignBiomes(
+    elev: number[][],
+    temp: number[][],
+    mois: number[][],
+    W: number,
+    H: number,
+    cfg: MapConfig,
+): TileType[][] {
+    const map: TileType[][] = Array.from({ length: H }, () => Array(W).fill(TileType.OCEAN))
+
+    const bw = cfg.biomeWeights
+    const total = bw.snow + bw.tundra + bw.taiga + bw.grass + bw.plains + bw.desert
+    if (total === 0) return map
+
+    // Температурные пороги из весов
+    // Порядок: Snow(холод) → Tundra → Taiga → Grass → Plains → Desert(жара)
+    const snowEnd   = bw.snow / total
+    const tundraEnd = snowEnd + bw.tundra / total
+    const taigaEnd  = tundraEnd + bw.taiga / total
+    const grassEnd  = taigaEnd + bw.grass / total
+    const plainsEnd = grassEnd + bw.plains / total
+    // desert = остаток до 1.0
+
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            if (elev[y][x] < cfg.oceanRatio) continue
+
+            const t = temp[y][x]
+            const m = mois[y][x]
+
+            if (t < snowEnd) {
+                map[y][x] = TileType.SNOW
+            } else if (t < tundraEnd) {
+                map[y][x] = TileType.TUNDRA
+            } else if (t < taigaEnd) {
+                map[y][x] = TileType.TAIGA
+            } else if (t < grassEnd) {
+                map[y][x] = TileType.GRASS
+            } else if (t < plainsEnd) {
+                map[y][x] = m > 0.6 ? TileType.GRASS : TileType.PLAINS
+            } else {
+                map[y][x] = m > 0.5 ? TileType.PLAINS : TileType.DESERT
+            }
+        }
+    }
+
+    return map
+}
+
+// ==========================================
+// ВОДНЫЕ ЗОНЫ
 // ==========================================
 
 function applyWaterZones(map: TileType[][], W: number, H: number): void {
-    // Шаг 1: BFS по 8 НАПРАВЛЕНИЯМ от суши
-    const dist: number[][] = Array.from({ length: H }, () =>
-        Array(W).fill(Infinity),
-    )
-    const q: number[] = [] // [x, y, x, y, ...]
+    const dist: number[][] = Array.from({ length: H }, () => Array(W).fill(Infinity))
+    const q: number[] = []
 
     for (let y = 0; y < H; y++)
         for (let x = 0; x < W; x++)
@@ -161,8 +261,6 @@ function applyWaterZones(map: TileType[][], W: number, H: number): void {
         const cx = q[head++]
         const cy = q[head++]
         const nd = dist[cy][cx] + 1
-
-        // BFS по 8 направлениям!
         for (const [dx, dy] of DIRS_8) {
             const nx = cx + dx
             const ny = cy + dy
@@ -173,72 +271,45 @@ function applyWaterZones(map: TileType[][], W: number, H: number): void {
         }
     }
 
-    // Шаг 2: Назначаем водные зоны
     for (let y = 0; y < H; y++)
         for (let x = 0; x < W; x++) {
             if (isLand(map[y][x])) continue
-
             const d = dist[y][x]
-
-            if (d <= 1) {
-                map[y][x] = TileType.SHALLOW
-            } else if (d <= 4) {
-                map[y][x] = TileType.SEA
-            } else {
-                map[y][x] = TileType.OCEAN
-            }
+            map[y][x] = d <= 1 ? TileType.SHALLOW : d <= 4 ? TileType.SEA : TileType.OCEAN
         }
 
-    // Шаг 3: Валидация — ни один Sea/Ocean не должен касаться суши
-    // (даже по диагонали)
+    // Валидация: Sea/Ocean не касается суши
     let fixed = true
     while (fixed) {
         fixed = false
-        for (let y = 0; y < H; y++) {
+        for (let y = 0; y < H; y++)
             for (let x = 0; x < W; x++) {
                 if (!isDeepWater(map[y][x])) continue
-
-                // Проверяем ВСЕ 8 соседей
-                let touchesLand = false
                 for (const [dx, dy] of DIRS_8) {
                     const nx = x + dx
                     const ny = y + dy
                     if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue
                     if (isLand(map[ny][nx])) {
-                        touchesLand = true
+                        map[y][x] = TileType.SHALLOW
+                        fixed = true
                         break
                     }
                 }
-
-                if (touchesLand) {
-                    map[y][x] = TileType.SHALLOW
-                    fixed = true
-                }
             }
-        }
     }
 }
 
 // ==========================================
 // ФИНАЛЬНАЯ ВАЛИДАЦИЯ
 // ==========================================
-// Последний проход ПОСЛЕ всех переходов —
-// гарантирует что никакие изменения в transitions
-// не сломали правило "Shallow между сушей и водой"
-// ==========================================
 
 function enforceShallowBorder(map: TileType[][], W: number, H: number): void {
     let changed = true
-
     while (changed) {
         changed = false
-
-        for (let y = 0; y < H; y++) {
+        for (let y = 0; y < H; y++)
             for (let x = 0; x < W; x++) {
-                const current = map[y][x]
-
-                // Правило A: Sea/Ocean касается суши → стать Shallow
-                if (isDeepWater(current)) {
+                if (isDeepWater(map[y][x])) {
                     for (const [dx, dy] of DIRS_8) {
                         const nx = x + dx
                         const ny = y + dy
@@ -250,46 +321,18 @@ function enforceShallowBorder(map: TileType[][], W: number, H: number): void {
                         }
                     }
                 }
-
-                // Правило B: Суша касается Ocean → 
-                // соседний Ocean должен стать Shallow
-                // (дополнительная защита)
-                if (isLand(current)) {
+                if (isLand(map[y][x])) {
                     for (const [dx, dy] of DIRS_8) {
                         const nx = x + dx
                         const ny = y + dy
                         if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue
-                        if (map[ny][nx] === TileType.OCEAN || map[ny][nx] === TileType.SEA) {
+                        if (isDeepWater(map[ny][nx])) {
                             map[ny][nx] = TileType.SHALLOW
                             changed = true
                         }
                     }
                 }
             }
-        }
-    }
-
-    // Финальная проверка: Sea не должна касаться суши
-    // (только Shallow может)
-    for (let y = 0; y < H; y++) {
-        for (let x = 0; x < W; x++) {
-            if (map[y][x] !== TileType.SEA) continue
-
-            for (const [dx, dy] of DIRS_8) {
-                const nx = x + dx
-                const ny = y + dy
-                if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue
-
-                // Sea рядом с Shallow — OK
-                // Sea рядом с Ocean — OK
-                // Sea рядом с Sea — OK
-                // Sea рядом с сушей — НЕТ!
-                if (isLand(map[ny][nx])) {
-                    map[y][x] = TileType.SHALLOW
-                    break
-                }
-            }
-        }
     }
 }
 
@@ -313,47 +356,28 @@ function applyTransitions(map: TileType[][], W: number, H: number): void {
     for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
             const c = orig[y][x]
-
-            // Только сухопутные переходы — НЕ трогаем водные тайлы
             if (!isLand(c)) continue
 
-            // Grass ↔ Desert → Plains
             if (c === TileType.GRASS && has(x, y, TileType.DESERT))
                 map[y][x] = TileType.PLAINS
             if (c === TileType.DESERT && has(x, y, TileType.GRASS))
                 map[y][x] = TileType.PLAINS
-
-            // Grass ↔ Tundra → Taiga
             if (c === TileType.GRASS && has(x, y, TileType.TUNDRA))
                 map[y][x] = TileType.TAIGA
             if (c === TileType.TUNDRA && has(x, y, TileType.GRASS))
                 map[y][x] = TileType.TAIGA
-
-            // Grass ↔ Snow → Taiga
             if (c === TileType.GRASS && has(x, y, TileType.SNOW))
                 map[y][x] = TileType.TAIGA
-
-            // Snow ↔ Grass → Tundra
             if (c === TileType.SNOW && has(x, y, TileType.GRASS))
-                map[y][x] = TileType.TUNDRA
-
-            // Snow ↔ Taiga → Tundra
+                map[y][x] = TileType.TAIGA
             if (c === TileType.SNOW && has(x, y, TileType.TAIGA))
-                map[y][x] = TileType.TUNDRA
-
-            // Snow ↔ Plains → Tundra
+                map[y][x] = TileType.TAIGA
             if (c === TileType.SNOW && has(x, y, TileType.PLAINS))
                 map[y][x] = TileType.TUNDRA
-
-            // Desert ↔ холодные → Plains
             if (c === TileType.DESERT && has(x, y, TileType.TAIGA, TileType.TUNDRA, TileType.SNOW))
                 map[y][x] = TileType.PLAINS
-
-            // Plains ↔ холодные → Grass
             if (c === TileType.PLAINS && has(x, y, TileType.TUNDRA, TileType.SNOW))
                 map[y][x] = TileType.GRASS
-
-            // Taiga ↔ Desert → Grass
             if (c === TileType.TAIGA && has(x, y, TileType.DESERT))
                 map[y][x] = TileType.GRASS
         }

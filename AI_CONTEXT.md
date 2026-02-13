@@ -23,14 +23,16 @@
 ### 2.1. Типы
 
 ```ts
-import { TileType, MapConfig, IsoPoint } from '@/game'
+import { TileType, MapConfig, IsoPoint, LandMassType, BiomeWeights } from '@/game'
 ```
 
 | Экспорт | Описание |
 |---------|----------|
 | `TileType` | enum: OCEAN, SEA, SHALLOW, GRASS, PLAINS, DESERT, TAIGA, TUNDRA, SNOW |
-| `MapConfig` | `{ width, height, seed?, scale?, oceanRatio?, falloff? }` |
+| `MapConfig` | `{ width, height, seed?, landMass, oceanRatio, noiseScale, noiseOctaves, islandCount, temperatureBias, moistureBias, biomeWeights }` |
 | `IsoPoint` | `{ x: number, y: number }` |
+| `LandMassType` | enum: PANGAEA, CONTINENTS, ARCHIPELAGO, LAKES, FRACTAL |
+| `BiomeWeights` | `{ snow, tundra, taiga, grass, plains, desert }` (0–100) |
 
 ### 2.2. Константы
 
@@ -48,14 +50,26 @@ import { DEFAULT_MAP_W, DEFAULT_MAP_H, TILE_NAMES, TILE_COLORS } from '@/game'
 ### 2.3. Функции
 
 ```ts
-import { generateMap } from '@/game'
+import { generateMap, getDefaultConfig, applyPreset } from '@/game'
 ```
 
 | Функция | Сигнатура | Описание |
 |---------|-----------|----------|
-| `generateMap` | `(cfg: MapConfig) => TileType[][]` | Процедурная генерация карты (остров, биомы, водные зоны) |
+| `generateMap` | `(cfg: MapConfig) => TileType[][]` | Процедурная генерация карты (форма суши, биомы, водные зоны) |
+| `getDefaultConfig` | `(width?, height?) => MapConfig` | Конфиг по умолчанию (MAP_PRESETS.default) |
+| `applyPreset` | `(base: MapConfig, presetName: string) => MapConfig` | Применение пресета (pangaea, archipelago, desert_world и др.) |
 
-### 2.4. Шум (noise)
+### 2.4. Пресеты
+
+```ts
+import { MAP_PRESETS } from '@/game'
+```
+
+| Экспорт | Описание |
+|---------|----------|
+| `MAP_PRESETS` | `Record<string, Partial<MapConfig>>` — default, pangaea, archipelago, desert_world, ice_age, lakes, tropical, tundra_world |
+
+### 2.5. Шум (noise)
 
 ```ts
 import { Rng, noise2D, normalize } from '@/game'
@@ -177,14 +191,15 @@ import { GamePage, GameLoader, GameCanvas } from '@/modules/game'
 | `GameLoader` | — | Dynamic import `GameCanvas` (ssr: false) + loading |
 | `GameCanvas` | — | Полный экран: Pixi + HUD (Legend, Controls, Hint, HoverInfo) |
 
-**Внутренние компоненты** (в `game-hud.tsx`, `loading-overlay.tsx`):
+**Внутренние компоненты** (в `game-hud.tsx`, `settings-panel.tsx`, `loading-overlay.tsx`):
 
 | Компонент | Props | Описание |
 |-----------|-------|----------|
+| `GameHud` | `{ seed, config, stats, hover, onRegen, onConfigChange, onApply }` | HUD: кнопки «Новая», «Настройки», Legend, Hint |
+| `SettingsPanel` | `{ config, stats, onChange, onApply, onClose }` | Панель настройки карты (пресеты, форма суши, климат, биомы) |
 | `HoverInfo` | `{ text: string }` | Подсказка при наведении на тайл |
-| `Controls` | `{ onRegen: () => void, seed: number }` | Кнопка «Новая карта» + seed |
 | `Legend` | — | Легенда биомов (цвета + названия) |
-| `Hint` | — | «Drag — перемещение | Scroll — зум» |
+| `Hint` | — | «Drag — перемещение | Scroll — зум | ⚙️ — настройки» |
 | `LoadingOverlay` | — | «Загрузка текстур и генерация мира...» |
 
 ---
@@ -213,6 +228,7 @@ import { GamePage, GameLoader, GameCanvas } from '@/modules/game'
 1. Создать `modules/game/ui/<имя>.tsx` (kebab-case)
 2. Добавить re-export в `modules/game/ui/index.ts`
 3. Добавить в `GameCanvas` или `GameHUD` при необходимости
+4. **Стилизация:** только Tailwind (`className`) или inline (`style`). Без CSS-файлов, CSS Modules, styled-components.
 
 ### Добавить новую страницу
 
@@ -241,6 +257,6 @@ import { GamePage, GameLoader, GameCanvas } from '@/modules/game'
 
 ---
 
-*Документ актуален для версии 0.2.2. Обновляй при добавлении нового API.*
+*Документ актуален для версии 0.3.0. Обновляй при добавлении нового API.*
 
 **Как обновлять:** см. DEVELOPER_GUIDE.md (раздел «Как правильно зафиксировать изменения»)
