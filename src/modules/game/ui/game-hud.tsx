@@ -75,8 +75,6 @@ function Legend() {
         TileType.GRASS,
         TileType.PLAINS,
         TileType.DESERT,
-        TileType.TAIGA,
-        TileType.TUNDRA,
         TileType.SNOW
     ]
 

@@ -7,9 +7,7 @@ export enum TileType {
     GRASS   = 3,
     PLAINS  = 4,
     DESERT  = 5,
-    TAIGA   = 6,
-    TUNDRA  = 7,
-    SNOW    = 8,
+    SNOW    = 6,
 }
 
 export interface IsoPoint {
@@ -35,8 +33,6 @@ export enum LandMassType {
 
 export interface BiomeWeights {
     snow: number       // 0–100
-    tundra: number
-    taiga: number
     grass: number
     plains: number
     desert: number
@@ -79,7 +75,7 @@ export const MAP_PRESETS: Record<string, Partial<MapConfig>> = {
         islandCount: 2,
         temperatureBias: 0,
         moistureBias: 0,
-        biomeWeights: { snow: 10, tundra: 10, taiga: 15, grass: 30, plains: 20, desert: 15 },
+        biomeWeights: { snow: 15, grass: 35, plains: 25, desert: 25 },
     },
 
     pangaea: {
@@ -90,7 +86,7 @@ export const MAP_PRESETS: Record<string, Partial<MapConfig>> = {
         islandCount: 1,
         temperatureBias: 0,
         moistureBias: 0,
-        biomeWeights: { snow: 10, tundra: 10, taiga: 15, grass: 30, plains: 20, desert: 15 },
+        biomeWeights: { snow: 15, grass: 35, plains: 25, desert: 25 },
     },
 
     archipelago: {
@@ -101,7 +97,7 @@ export const MAP_PRESETS: Record<string, Partial<MapConfig>> = {
         islandCount: 8,
         temperatureBias: 0.2,
         moistureBias: 0.2,
-        biomeWeights: { snow: 5, tundra: 5, taiga: 10, grass: 40, plains: 25, desert: 15 },
+        biomeWeights: { snow: 5, grass: 40, plains: 30, desert: 25 },
     },
 
     desert_world: {
@@ -112,7 +108,7 @@ export const MAP_PRESETS: Record<string, Partial<MapConfig>> = {
         islandCount: 1,
         temperatureBias: 0.6,
         moistureBias: -0.5,
-        biomeWeights: { snow: 2, tundra: 3, taiga: 5, grass: 15, plains: 30, desert: 45 },
+        biomeWeights: { snow: 5, grass: 15, plains: 25, desert: 55 },
     },
 
     ice_age: {
@@ -123,7 +119,7 @@ export const MAP_PRESETS: Record<string, Partial<MapConfig>> = {
         islandCount: 2,
         temperatureBias: -0.6,
         moistureBias: 0.3,
-        biomeWeights: { snow: 35, tundra: 25, taiga: 20, grass: 12, plains: 5, desert: 3 },
+        biomeWeights: { snow: 50, grass: 25, plains: 15, desert: 10 },
     },
 
     lakes: {
@@ -134,7 +130,7 @@ export const MAP_PRESETS: Record<string, Partial<MapConfig>> = {
         islandCount: 1,
         temperatureBias: 0,
         moistureBias: 0.3,
-        biomeWeights: { snow: 8, tundra: 8, taiga: 15, grass: 35, plains: 20, desert: 14 },
+        biomeWeights: { snow: 10, grass: 40, plains: 25, desert: 25 },
     },
 
     tropical: {
@@ -145,18 +141,7 @@ export const MAP_PRESETS: Record<string, Partial<MapConfig>> = {
         islandCount: 6,
         temperatureBias: 0.4,
         moistureBias: 0.5,
-        biomeWeights: { snow: 0, tundra: 0, taiga: 5, grass: 50, plains: 30, desert: 15 },
-    },
-
-    tundra_world: {
-        landMass: LandMassType.PANGAEA,
-        oceanRatio: 0.25,
-        noiseScale: 14,
-        noiseOctaves: 4,
-        islandCount: 1,
-        temperatureBias: -0.3,
-        moistureBias: -0.2,
-        biomeWeights: { snow: 20, tundra: 30, taiga: 25, grass: 15, plains: 7, desert: 3 },
+        biomeWeights: { snow: 0, grass: 45, plains: 30, desert: 25 },
     },
 }
 

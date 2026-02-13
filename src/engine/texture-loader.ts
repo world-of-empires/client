@@ -11,7 +11,13 @@ export async function loadAllTileTextures(): Promise<void> {
     const entries = Object.entries(TILE_TEXTURE_PATHS) as [string, string][]
 
     for (const [key, path] of entries) {
-        Assets.add({ alias: `tile_${key}`, src: path })
+        Assets.add({
+            alias: `tile_${key}`,
+            src: path,
+            data: {
+                scaleMode: 'nearest' // уменьшает артефакты интерполяции при масштабировании
+            }
+        })
     }
 
     const aliases = entries.map(([key]) => `tile_${key}`)
@@ -31,7 +37,10 @@ export async function loadAllTileTextures(): Promise<void> {
         console.error('❌ Failed to load textures as bundle, trying one by one...', err)
         for (const [key, path] of entries) {
             try {
-                const texture = await Assets.load<Texture>(path)
+                const texture = await Assets.load<Texture>({
+                    src: path,
+                    data: { scaleMode: 'nearest' }
+                })
                 if (texture && !texture.destroyed) {
                     textureCache.set(Number(key) as TileType, texture)
                 }

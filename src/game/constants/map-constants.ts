@@ -7,8 +7,6 @@ export const TILE_NAMES: Record<TileType, string> = {
     [TileType.GRASS]: 'grass',
     [TileType.PLAINS]: 'plains',
     [TileType.DESERT]: 'desert',
-    [TileType.TAIGA]: 'taiga',
-    [TileType.TUNDRA]: 'tundra',
     [TileType.SNOW]: 'snow'
 }
 
@@ -19,7 +17,5 @@ export const TILE_COLORS: Record<TileType, number> = {
     [TileType.GRASS]: 0x4caf50,
     [TileType.PLAINS]: 0xc0ca33,
     [TileType.DESERT]: 0xffb74d,
-    [TileType.TAIGA]: 0x2e7d32,
-    [TileType.TUNDRA]: 0x78909c,
     [TileType.SNOW]: 0xe8eaf6
 }

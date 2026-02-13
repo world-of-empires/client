@@ -14,7 +14,5 @@ export const TILE_TEXTURE_PATHS: Record<TileType, string> = {
     [TileType.GRASS]: '/assets/tilles/grass.png',
     [TileType.PLAINS]: '/assets/tilles/plains.png',
     [TileType.DESERT]: '/assets/tilles/desert.png',
-    [TileType.TAIGA]: '/assets/tilles/taiga.png',
-    [TileType.TUNDRA]: '/assets/tilles/tundra.png',
     [TileType.SNOW]: '/assets/tilles/snow.png'
 }

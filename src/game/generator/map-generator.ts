@@ -190,6 +190,7 @@ function applyMoisture(mois: number[][], W: number, H: number, bias: number): vo
 
 // ==========================================
 // НАЗНАЧЕНИЕ БИОМОВ ПО ВЕСАМ
+// Порядок: Snow(холод) → Grass → Plains → Desert(жара)
 // ==========================================
 
 function assignBiomes(
@@ -203,15 +204,11 @@ function assignBiomes(
     const map: TileType[][] = Array.from({ length: H }, () => Array(W).fill(TileType.OCEAN))
 
     const bw = cfg.biomeWeights
-    const total = bw.snow + bw.tundra + bw.taiga + bw.grass + bw.plains + bw.desert
+    const total = bw.snow + bw.grass + bw.plains + bw.desert
     if (total === 0) return map
 
-    // Температурные пороги из весов
-    // Порядок: Snow(холод) → Tundra → Taiga → Grass → Plains → Desert(жара)
     const snowEnd   = bw.snow / total
-    const tundraEnd = snowEnd + bw.tundra / total
-    const taigaEnd  = tundraEnd + bw.taiga / total
-    const grassEnd  = taigaEnd + bw.grass / total
+    const grassEnd  = snowEnd + bw.grass / total
     const plainsEnd = grassEnd + bw.plains / total
     // desert = остаток до 1.0
 
@@ -224,10 +221,6 @@ function assignBiomes(
 
             if (t < snowEnd) {
                 map[y][x] = TileType.SNOW
-            } else if (t < tundraEnd) {
-                map[y][x] = TileType.TUNDRA
-            } else if (t < taigaEnd) {
-                map[y][x] = TileType.TAIGA
             } else if (t < grassEnd) {
                 map[y][x] = TileType.GRASS
             } else if (t < plainsEnd) {
@@ -338,6 +331,8 @@ function enforceShallowBorder(map: TileType[][], W: number, H: number): void {
 
 // ==========================================
 // ПЕРЕХОДЫ СУШИ
+// Snow ↔ Grass → через Plains (переходная зона)
+// Grass ↔ Desert → через Plains
 // ==========================================
 
 function applyTransitions(map: TileType[][], W: number, H: number): void {
@@ -358,28 +353,23 @@ function applyTransitions(map: TileType[][], W: number, H: number): void {
             const c = orig[y][x]
             if (!isLand(c)) continue
 
+            // Grass рядом с Desert → Plains
             if (c === TileType.GRASS && has(x, y, TileType.DESERT))
                 map[y][x] = TileType.PLAINS
             if (c === TileType.DESERT && has(x, y, TileType.GRASS))
                 map[y][x] = TileType.PLAINS
-            if (c === TileType.GRASS && has(x, y, TileType.TUNDRA))
-                map[y][x] = TileType.TAIGA
-            if (c === TileType.TUNDRA && has(x, y, TileType.GRASS))
-                map[y][x] = TileType.TAIGA
-            if (c === TileType.GRASS && has(x, y, TileType.SNOW))
-                map[y][x] = TileType.TAIGA
+
+            // Snow рядом с Grass → Plains
             if (c === TileType.SNOW && has(x, y, TileType.GRASS))
-                map[y][x] = TileType.TAIGA
-            if (c === TileType.SNOW && has(x, y, TileType.TAIGA))
-                map[y][x] = TileType.TAIGA
-            if (c === TileType.SNOW && has(x, y, TileType.PLAINS))
-                map[y][x] = TileType.TUNDRA
-            if (c === TileType.DESERT && has(x, y, TileType.TAIGA, TileType.TUNDRA, TileType.SNOW))
                 map[y][x] = TileType.PLAINS
-            if (c === TileType.PLAINS && has(x, y, TileType.TUNDRA, TileType.SNOW))
-                map[y][x] = TileType.GRASS
-            if (c === TileType.TAIGA && has(x, y, TileType.DESERT))
-                map[y][x] = TileType.GRASS
+            if (c === TileType.GRASS && has(x, y, TileType.SNOW))
+                map[y][x] = TileType.PLAINS
+
+            // Snow рядом с Desert → Plains
+            if (c === TileType.SNOW && has(x, y, TileType.DESERT))
+                map[y][x] = TileType.PLAINS
+            if (c === TileType.DESERT && has(x, y, TileType.SNOW))
+                map[y][x] = TileType.PLAINS
         }
     }
 }

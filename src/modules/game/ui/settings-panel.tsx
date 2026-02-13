@@ -132,16 +132,6 @@ export function SettingsPanel({ config, stats, onChange, onApply, onClose }: Set
             <Section title='🌿 Доли биомов'>
                 <BiomeSlider label='❄️ Snow' value={config.biomeWeights.snow} onChange={v => updateBiome('snow', v)} />
                 <BiomeSlider
-                    label='🥶 Tundra'
-                    value={config.biomeWeights.tundra}
-                    onChange={v => updateBiome('tundra', v)}
-                />
-                <BiomeSlider
-                    label='🌲 Taiga'
-                    value={config.biomeWeights.taiga}
-                    onChange={v => updateBiome('taiga', v)}
-                />
-                <BiomeSlider
                     label='🌿 Grass'
                     value={config.biomeWeights.grass}
                     onChange={v => updateBiome('grass', v)}
@@ -261,8 +251,7 @@ const PRESET_LABELS: Record<string, string> = {
     desert_world: 'Пустыня',
     ice_age: 'Ледник',
     lakes: 'Озёра',
-    tropical: 'Тропики',
-    tundra_world: 'Тундра'
+    tropical: 'Тропики'
 }
 
 function tempLabel(v: number): string {
@@ -285,6 +274,5 @@ function getBiomeColor(name: string): string {
     const entry = Object.entries(TILE_NAMES).find(([, v]) => v === name)
     if (!entry) return '#666666'
     const color = TILE_COLORS[Number(entry[0]) as TileType]
-    // Важно: гарантируем ровно 6 hex-символов
     return '#' + (color >>> 0).toString(16).padStart(6, '0')
 }
