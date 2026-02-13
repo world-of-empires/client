@@ -13,7 +13,9 @@
 3. CHANGELOG.md — новая запись
 4. package.json — версия
 5. AI_CONTEXT.md, ROADMAP.md — версия
-6. `git add -A` → `git commit`
+6. `git add -A` → `git commit --trailer "Co-authored-by: MaridiM Studio <maridim.dev@gmail.com>" -m "..."`
+
+**Co-authored-by:** MaridiM Studio <maridim.dev@gmail.com>
 
 ---
 

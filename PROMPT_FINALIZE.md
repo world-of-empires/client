@@ -38,8 +38,9 @@
 
 6. **Сформируй и выполни git commit:**
    - `git add -A`
-   - `git commit -m "vX.Y.Z: Краткое описание\n\n- Деталь 1\n- Деталь 2"`
+   - `git commit --trailer "Co-authored-by: MaridiM Studio <maridim.dev@gmail.com>" -m "vX.Y.Z: Краткое описание\n\n- Деталь 1\n- Деталь 2"`
    - Сообщение коммита должно отражать суть изменений
+   - **Co-authored-by:** всегда `MaridiM Studio <maridim.dev@gmail.com>` (не Cursor)
 
 7. **Не выполняй** `git push` — это сделает разработчик сам.
 

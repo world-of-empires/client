@@ -1,0 +1,14 @@
+---
+description: Правила для git commit — Co-authored-by trailer
+alwaysApply: true
+---
+
+# Git Commits
+
+При выполнении `git commit` добавляй trailer с данными автора проекта:
+
+```
+git commit --trailer "Co-authored-by: MaridiM Studio <maridim.dev@gmail.com>" -m "Сообщение"
+```
+
+**Важно:** Используй `MaridiM Studio <maridim.dev@gmail.com>` — не Cursor и не cursoragent@cursor.com.

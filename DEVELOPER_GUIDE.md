@@ -132,11 +132,13 @@ import { GamePage } from '@/modules/game'
 ```bash
 git add -A
 git status
-git commit -m "vX.Y.Z: Краткое описание
+git commit --trailer "Co-authored-by: MaridiM Studio <maridim.dev@gmail.com>" -m "vX.Y.Z: Краткое описание
 
 - Деталь 1
 - Деталь 2"
 ```
+
+**Co-authored-by:** используй `MaridiM Studio <maridim.dev@gmail.com>` — данные автора проекта.
 
 ---
 
