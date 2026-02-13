@@ -28,11 +28,11 @@ import { TileType, MapConfig, IsoPoint, LandMassType, BiomeWeights } from '@/gam
 
 | Экспорт | Описание |
 |---------|----------|
-| `TileType` | enum: OCEAN, SEA, SHALLOW, GRASS, PLAINS, DESERT, TAIGA, TUNDRA, SNOW |
+| `TileType` | enum: OCEAN, SEA, SHALLOW, GRASS, PLAINS, DESERT, SNOW |
 | `MapConfig` | `{ width, height, seed?, landMass, oceanRatio, noiseScale, noiseOctaves, islandCount, temperatureBias, moistureBias, biomeWeights }` |
 | `IsoPoint` | `{ x: number, y: number }` |
 | `LandMassType` | enum: PANGAEA, CONTINENTS, ARCHIPELAGO, LAKES, FRACTAL |
-| `BiomeWeights` | `{ snow, tundra, taiga, grass, plains, desert }` (0–100) |
+| `BiomeWeights` | `{ snow, grass, plains, desert }` (0–100) |
 
 ### 2.2. Константы
 
@@ -67,7 +67,7 @@ import { MAP_PRESETS } from '@/game'
 
 | Экспорт | Описание |
 |---------|----------|
-| `MAP_PRESETS` | `Record<string, Partial<MapConfig>>` — default, pangaea, archipelago, desert_world, ice_age, lakes, tropical, tundra_world |
+| `MAP_PRESETS` | `Record<string, Partial<MapConfig>>` — default, pangaea, archipelago, desert_world, ice_age, lakes, tropical |
 
 ### 2.5. Шум (noise)
 
@@ -257,6 +257,6 @@ import { GamePage, GameLoader, GameCanvas } from '@/modules/game'
 
 ---
 
-*Документ актуален для версии 0.3.0. Обновляй при добавлении нового API.*
+*Документ актуален для версии 0.4.0. Обновляй при добавлении нового API.*
 
 **Как обновлять:** см. DEVELOPER_GUIDE.md (раздел «Как правильно зафиксировать изменения»)

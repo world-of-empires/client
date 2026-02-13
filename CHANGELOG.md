@@ -4,6 +4,27 @@
 
 ---
 
+## [0.4.0] — 12.02.2025
+
+**Упрощение** | 7 тайлов: ocean, sea, shallow, grass, plains, desert, snow
+
+### Изменено
+
+- **game/types/game-types.ts** — TileType: убраны TAIGA, TUNDRA; BiomeWeights: snow, grass, plains, desert; MAP_PRESETS — 7 пресетов (убран tundra_world)
+- **game/constants/map-constants.ts** — TILE_NAMES, TILE_COLORS для 7 типов
+- **engine/constants.ts** — TILE_TEXTURE_PATHS для 7 типов
+- **map-generator.ts** — assignBiomes: 4 сухопутных биома (Snow → Grass → Plains → Desert); applyTransitions упрощён
+- **settings-panel.tsx** — слайдеры только для snow, grass, plains, desert
+- **game-hud.tsx** — Legend для 7 тайлов
+
+### Удалено
+
+- **TileType.TAIGA**, **TileType.TUNDRA**
+- **taiga.png**, **tundra.png**
+- Пресет tundra_world
+
+---
+
 ## [0.3.0] — 12.02.2025
 
 **Новая функциональность** | Настройки карты, пресеты, расширенный MapConfig
@@ -219,12 +240,14 @@
 
 | Версия | Дата       | Фазы                                    |
 |--------|------------|-----------------------------------------|
+| 0.4.0  | 12.02.2025 | 7 тайлов (упрощение)                    |
 | 0.3.0  | 12.02.2025 | Настройки карты, пресеты, MapConfig     |
 | 0.2.2  | 12.02.2025 | Исправление водных зон                  |
 | 0.2.1  | 12.02.2025 | Рефакторинг архитектуры                 |
 | 0.2.0  | 12.02.2025 | 4, 5                                    |
 | 0.1.0  | 12.02.2025 | 0, 1, 2, 3 (частично)                   |
 
+[0.4.0]: https://github.com/your-org/world-of-empires/releases/tag/v0.4.0
 [0.3.0]: https://github.com/your-org/world-of-empires/releases/tag/v0.3.0
 [0.2.2]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.2
 [0.2.1]: https://github.com/your-org/world-of-empires/releases/tag/v0.2.1
